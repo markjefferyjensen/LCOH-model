@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SunHydrogen Production & Cost Estimator</title>
+<title>Test Production & Cost Estimator</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -243,7 +243,7 @@
 
 <header>
   <div class="header-text">
-    <h1>SunHydrogen &mdash; Production &amp; Cost Estimator</h1>
+    <h1>Test &mdash; Production &amp; Cost Estimator</h1>
     <p>Interactive investor model &nbsp;·&nbsp; Photoelectrochemical hydrogen technology</p>
   </div>
 </header>
@@ -357,7 +357,7 @@
     <!-- Cost breakdown chart -->
     <div class="chart-card">
       <div class="chart-title">Levelized Cost Breakdown</div>
-      <div class="chart-subtitle">$/kg H₂ by component — SunHydrogen vs. Green Electrolysis (PEM)</div>
+      <div class="chart-subtitle">$/kg H₂ by component — Test vs. Green Electrolysis (PEM)</div>
       <div class="chart-wrap">
         <canvas id="chart-cost"></canvas>
       </div>
@@ -377,11 +377,11 @@
 //  DATA SOURCE
 //  Change the URL below to point to wherever your JSON file is hosted.
 //  Options:
-//    Same folder (local/testing):  './sunhydrogen_model.json'
-//    AWS S3 or CDN:                'https://your-bucket.s3.amazonaws.com/sunhydrogen_model.json'
-//    GitHub raw:                   'https://raw.githubusercontent.com/you/repo/main/sunhydrogen_model.json'
+//    Same folder (local/testing):  './test_model.json'
+//    AWS S3 or CDN:                'https://your-bucket.s3.amazonaws.com/test_model.json'
+//    GitHub raw:                   'https://raw.githubusercontent.com/you/repo/main/test_model.json'
 // ═══════════════════════════════════════════════════════════════════
-const JSON_URL = 'https://markjefferyjensen.github.io/LCOH-model/sunhydrogen_model.json';
+const JSON_URL = 'https://markjefferyjensen.github.io/LCOH-model/test_model.json';
 
 // ── Grid nodes (must match the JSON exactly) ──
 const AREA_NODES  = [25, 100, 250, 500];           // acres
@@ -505,7 +505,7 @@ const costChart = new Chart(
   {
     type: 'bar',
     data: {
-      labels: ['SunHydrogen', 'Green Electrolysis\n(PEM)'],
+      labels: ['Test', 'Green Electrolysis\n(PEM)'],
       datasets: [
         { label: 'CapEx',       data: [0,0], backgroundColor: 'rgba(245,197,24,0.88)', borderWidth: 0, borderRadius: { topLeft:0, topRight:0, bottomLeft:2, bottomRight:2 }, borderSkipped: false },
         { label: 'O&M',         data: [0,0], backgroundColor: 'rgba(245,197,24,0.42)', borderWidth: 0 },
@@ -571,7 +571,7 @@ function update() {
   const result = lookup(acres, water, elec, currentRegion, currentReactor);
   if (!result) return;
 
-  const r = result.sh;    // SunHydrogen outputs
+  const r = result.sh;    // Test outputs
   const e = result.elec;  // Electrolysis outputs
 
   // ── Region / reactor display metadata ──
@@ -611,7 +611,7 @@ function showError(msg) {
     const el = document.getElementById(id);
     if (el) el.innerHTML = '<span style="color:#e05c3a;font-size:11px">Error</span>';
   });
-  console.error('SunHydrogen model:', msg);
+  console.error('Test model:', msg);
 }
 
 // ═══════════════════════════════════════════════════════════════════
