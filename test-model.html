@@ -244,7 +244,7 @@
 <header>
   <div class="header-text">
     <h1>Test &mdash; Production &amp; Cost Estimator</h1>
-    <p>Interactive investor model &nbsp;·&nbsp; Photoelectrochemical hydrogen technology</p>
+    <p>Interactive investor model &nbsp;·&nbsp; Photocatalytic hydrogen technology</p>
   </div>
 </header>
 
@@ -338,7 +338,7 @@
     <!-- KPI row 2: context parameters — reversed order: solar, STH, CO2 -->
     <div class="kpi-row-2">
       <div class="kpi-card">
-        <div class="kpi-label">Avg. Solar Irradiance</div>
+        <div class="kpi-label">Avg. Annual Insolation</div>
         <div class="kpi-value" id="kpi-solar">—</div>
         <div class="kpi-sub" id="kpi-region-lbl">—</div>
       </div>
@@ -356,7 +356,7 @@
 
     <!-- Cost breakdown chart -->
     <div class="chart-card">
-      <div class="chart-title">Levelized Cost Breakdown</div>
+      <div class="chart-title">Test vs. Green Electrolysis</div>
       <div class="chart-subtitle">$/kg H₂ by component — Test vs. Green Electrolysis (PEM)</div>
       <div class="chart-wrap">
         <canvas id="chart-cost"></canvas>
@@ -388,7 +388,7 @@ const AREA_NODES  = [25, 100, 250, 500];           // acres
 const WATER_NODES = [1, 5];                         // $/m³
 const ELEC_NODES  = [0.02, 0.03, 0.06, 0.10, 0.20]; // $/kWh
 
-// ── Region metadata (labels + solar irradiance for display only) ──
+// ── Region metadata (labels + average annual insolation for display only) ──
 const REGIONS = {
   california: { label: 'California',              solar: 6.64 },
   texas:      { label: 'Texas',                   solar: 5.20 },
