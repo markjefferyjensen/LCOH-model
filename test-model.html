@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SunHydrogen Production & Cost Estimator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:     #0a0e14;
+    --panel:  #0f1520;
+    --border: #1e2d42;
+    --yellow: #f5c518;
+    --teal:   #1ad4c8;
+    --green:  #7ecf6e;
+    --purple: #a78bfa;
+    --blue:   #60a5fa;
+    --text:   #f0f4fb;
+    --muted:  #8fa3bc;
+    --dim:    #56708a;
+    --glow:   rgba(245,197,24,0.18);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* ── Page width constraint ── */
+  .page-wrap {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 26px 12px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  header::after {
+    content: ''; position: absolute; bottom: -1px; left: 26px;
+    width: 90px; height: 2px;
+    background: linear-gradient(90deg, var(--yellow), transparent);
+  }
+
+  .header-text h1 {
+    font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 18px;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text);
+  }
+  .header-text p {
+    color: var(--muted); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; margin-top: 1px;
+  }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(245,197,24,0.1); border: 1px solid rgba(245,197,24,0.3);
+    color: var(--yellow); font-family: 'Rajdhani', sans-serif;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 2px; white-space: nowrap;
+  }
+
+  /* ── Layout ── */
+  .main { display: grid; grid-template-columns: 278px 1fr; }
+
+  /* ── Controls ── */
+  .controls {
+    background: var(--panel); border-right: 1px solid var(--border);
+    padding: 18px 16px; display: flex; flex-direction: column; gap: 18px;
+  }
+  .section-label {
+    font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border);
+  }
+
+  /* Slider */
+  .slider-item { display: flex; flex-direction: column; gap: 6px; }
+  .slider-header { display: flex; justify-content: space-between; align-items: center; }
+  .slider-label-wrap { display: flex; align-items: center; gap: 0; }
+  .slider-label { font-size: 11px; font-weight: 500; color: var(--text); }
+  .slider-value {
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
+    color: var(--yellow); min-width: 88px; text-align: right;
+  }
+  .slider-sub { font-size: 10px; color: var(--muted); }
+
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 3px;
+    background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--yellow); border-radius: 50%; border: 2px solid var(--bg);
+    box-shadow: 0 0 8px var(--glow); cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.3); box-shadow: 0 0 14px var(--glow);
+  }
+
+  /* Unit toggle */
+  .unit-toggle {
+    display: inline-flex; border: 1px solid var(--border);
+    border-radius: 2px; overflow: hidden; margin-left: 7px;
+  }
+  .unit-btn {
+    padding: 2px 7px; background: transparent; border: none;
+    color: var(--muted); font-family: 'Rajdhani', sans-serif;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .unit-btn.active { background: rgba(245,197,24,0.15); color: var(--yellow); }
+
+  /* Option buttons */
+  .btn-group { display: flex; flex-direction: column; gap: 4px; }
+  .opt-btn {
+    width: 100%; padding: 6px 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 500; text-align: left;
+    cursor: pointer; border-radius: 2px; transition: all 0.15s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .opt-detail { font-size: 10px; font-weight: 400; color: var(--muted); }
+  .opt-btn.active {
+    background: rgba(245,197,24,0.1); border-color: var(--yellow); color: var(--text);
+  }
+  .opt-btn.active .opt-detail { color: var(--yellow); }
+  .opt-btn:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+
+  .header-badge { display: none; }
+
+  /* ── Results ── */
+  .results { padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* KPI — 2 rows */
+  .kpi-row-1 { display: grid; grid-template-columns: repeat(2,1fr); gap: 9px; }
+  .kpi-row-2 { display: grid; grid-template-columns: repeat(3,1fr); gap: 9px; }
+  .kpi-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 3px; padding: 11px 13px;
+    position: relative; overflow: hidden;
+  }
+  /* Primary cards — more emphasis */
+  .kpi-row-1 .kpi-card {
+    background: #111d2e;
+    border-color: #253650;
+    padding: 16px 18px;
+  }
+  .kpi-row-1 .kpi-card .kpi-label {
+    font-size: 11px; letter-spacing: 0.09em;
+    color: var(--muted);
+  }
+  .kpi-row-1 .kpi-card .kpi-value {
+    font-size: 38px;
+    color: var(--text);
+  }
+  .kpi-row-1 .kpi-card .kpi-unit {
+    font-size: 15px; color: var(--muted);
+  }
+  .kpi-row-1 .kpi-card .kpi-sub {
+    font-size: 11px; color: var(--muted);
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%;
+  }
+  /* Row 1 accent — full-height bright bar + top glow line */
+  .kpi-row-1 .kpi-card:nth-child(1)::before { background: var(--yellow); width: 4px; }
+  .kpi-row-1 .kpi-card:nth-child(2)::before { background: var(--teal);   width: 4px; }
+  .kpi-row-1 .kpi-card:nth-child(1)::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, rgba(245,197,24,0.5), transparent);
+  }
+  .kpi-row-1 .kpi-card:nth-child(2)::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, rgba(26,212,200,0.5), transparent);
+  }
+  /* Row 2 accent colours */
+  .kpi-row-2 .kpi-card:nth-child(1)::before { background: var(--blue); }
+  .kpi-row-2 .kpi-card:nth-child(2)::before { background: var(--purple); }
+  .kpi-row-2 .kpi-card:nth-child(3)::before { background: var(--green); }
+
+  .kpi-label {
+    font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 5px; line-height: 1.3; font-weight: 500;
+  }
+  .kpi-value {
+    font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700;
+    line-height: 1; color: var(--text);
+  }
+  .kpi-unit { font-size: 12px; font-weight: 400; color: var(--muted); margin-left: 2px; }
+  .kpi-sub { font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.3; font-weight: 400; }
+
+  /* Chart */
+  .chart-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 3px; padding: 14px 16px;
+  }
+  .chart-title {
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); margin-bottom: 2px;
+  }
+  .chart-subtitle { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+  .chart-wrap { position: relative; height: 210px; }
+
+  /* Footer */
+  .model-note {
+    font-size: 10px; color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 9px; line-height: 1.75;
+  }
+  .model-note .lbl { color: var(--yellow); }
+  .model-note .sa-credit {
+    display: block;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-style: italic;
+    letter-spacing: 0.02em;
+  }
+
+  @keyframes flash { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  .flash { animation: flash 0.22s ease; }
+
+  @media (max-width: 820px) {
+    .main { grid-template-columns: 1fr; }
+    .controls { border-right: none; border-bottom: 1px solid var(--border); }
+    .kpi-row-1 { grid-template-columns: repeat(2,1fr); }
+    .kpi-row-2 { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+<header>
+  <div class="header-text">
+    <h1>SunHydrogen &mdash; Production &amp; Cost Estimator</h1>
+    <p>Interactive investor model &nbsp;·&nbsp; Photoelectrochemical hydrogen technology</p>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Controls -->
+  <aside class="controls">
+
+    <div>
+      <div class="section-label">Deployment Parameters</div>
+
+      <!-- Area slider -->
+      <div class="slider-item" style="margin-bottom:14px">
+        <div class="slider-header">
+          <div class="slider-label-wrap">
+            <span class="slider-label">Solar Field Area</span>
+            <div class="unit-toggle">
+              <button class="unit-btn active" id="btn-acres">acres</button>
+              <button class="unit-btn" id="btn-m2">m²</button>
+            </div>
+          </div>
+          <span class="slider-value" id="val-area">500 acres</span>
+        </div>
+        <input type="range" id="sl-area" min="25" max="500" step="5" value="500">
+        <span class="slider-sub" id="area-sub">≈ 2,024,000 m²</span>
+      </div>
+
+      <!-- Water cost slider -->
+      <div class="slider-item" style="margin-bottom:0">
+        <div class="slider-header">
+          <span class="slider-label">Water Source Cost</span>
+          <span class="slider-value" id="val-water">$2.50 /m³</span>
+        </div>
+        <input type="range" id="sl-water" min="1" max="10" step="0.25" value="2.5">
+        <span class="slider-sub">Tap, recycled, or desalinated</span>
+      </div>
+
+      <!-- Electricity cost slider -->
+      <div class="slider-item" style="margin-top:14px">
+        <div class="slider-header">
+          <span class="slider-label">Cost of Electricity</span>
+          <span class="slider-value" id="val-elec">$0.08 /kWh</span>
+        </div>
+        <input type="range" id="sl-elec" min="0.02" max="0.20" step="0.01" value="0.08">
+        <span class="slider-sub">Used for green electrolysis comparison</span>
+      </div>
+    </div>
+
+    <!-- Region -->
+    <div>
+      <div class="section-label">Region</div>
+      <div class="btn-group" id="region-group">
+        <button class="opt-btn active" data-region="california">California <span class="opt-detail">6.64 kWh/m²/d</span></button>
+        <button class="opt-btn" data-region="texas">Texas <span class="opt-detail">5.20 kWh/m²/d</span></button>
+        <button class="opt-btn" data-region="germany">Germany <span class="opt-detail">3.20 kWh/m²/d</span></button>
+        <button class="opt-btn" data-region="japan">Japan <span class="opt-detail">4.20 kWh/m²/d</span></button>
+        <button class="opt-btn" data-region="oman">Oman <span class="opt-detail">5.80 kWh/m²/d</span></button>
+        <button class="opt-btn" data-region="ksa">Kingdom of Saudi Arabia <span class="opt-detail">6.00 kWh/m²/d</span></button>
+      </div>
+    </div>
+
+    <!-- Reactor -->
+    <div>
+      <div class="section-label">Reactor Technology</div>
+      <div class="btn-group" id="reactor-group">
+        <button class="opt-btn active" data-reactor="lowcost">Low Cost <span class="opt-detail">STH 9.0%</span></button>
+        <button class="opt-btn" data-reactor="highperf">High Performance <span class="opt-detail">STH 11.2%</span></button>
+        <button class="opt-btn" data-reactor="nextgen">Next Generation R&amp;D <span class="opt-detail">STH 16.0%</span></button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Results -->
+  <div class="results">
+
+    <!-- KPI row 1: primary outputs -->
+    <div class="kpi-row-1">
+      <div class="kpi-card">
+        <div class="kpi-label">Daily H₂ Production</div>
+        <div class="kpi-value" id="kpi-daily">—<span class="kpi-unit">kg/d</span></div>
+        <div class="kpi-sub" id="kpi-annual">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Levelized Cost of H₂</div>
+        <div class="kpi-value" id="kpi-cost">—<span class="kpi-unit">$/kg</span></div>
+        <div class="kpi-sub">LCOH · 20 yr · 8% discount</div>
+      </div>
+    </div>
+
+    <!-- KPI row 2: context parameters — reversed order: solar, STH, CO2 -->
+    <div class="kpi-row-2">
+      <div class="kpi-card">
+        <div class="kpi-label">Avg. Solar Irradiance</div>
+        <div class="kpi-value" id="kpi-solar">—</div>
+        <div class="kpi-sub" id="kpi-region-lbl">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Solar-to-H₂ Efficiency</div>
+        <div class="kpi-value" id="kpi-sth">—<span class="kpi-unit">%</span></div>
+        <div class="kpi-sub" id="kpi-reactor-lbl">—</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">CO₂ Avoided</div>
+        <div class="kpi-value" id="kpi-co2">—<span class="kpi-unit">t/yr</span></div>
+        <div class="kpi-sub">vs. grey H₂ (SMR)</div>
+      </div>
+    </div>
+
+    <!-- Cost breakdown chart -->
+    <div class="chart-card">
+      <div class="chart-title">Levelized Cost Breakdown</div>
+      <div class="chart-subtitle">$/kg H₂ by component — SunHydrogen vs. Green Electrolysis (PEM)</div>
+      <div class="chart-wrap">
+        <canvas id="chart-cost"></canvas>
+      </div>
+    </div>
+
+    <!-- Assumptions -->
+    <div class="model-note">
+      <span class="lbl">Model assumptions:</span> Levelized cost computed using the H2A methodology (US DOE Hydrogen Analysis model). System life 20 years, discount rate 8%, annual O&amp;M 10% of CapEx. Water cost includes a base treatment &amp; handling cost of $0.08/kg H₂ plus a variable source cost (9 kg H₂O per kg H₂ × slider rate). CapEx basis: High Performance $160/m², Low Cost $131/m², Next Generation R&amp;D $146/m². STH efficiency scales hydrogen yield from incident solar energy (HHV 142 MJ/kg H₂; 1 kWh = 3.6 MJ). Field area converted at 1 acre = 4,047 m². CO₂ avoidance basis: grey H₂ via SMR ≈ 10 kg CO₂/kg H₂. Green electrolysis comparison uses PEM electrolyzer (55 kWh/kg H₂, $1,000/kW installed, 8,000 hr/yr, 4% O&amp;M, $0.50/kg fixed). Results are illustrative estimates for investor discussion purposes only.
+      <span class="sa-credit">Techno-economic model developed by Strategic Analysis, Inc.</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  DATA SOURCE
+//  Change the URL below to point to wherever your JSON file is hosted.
+//  Options:
+//    Same folder (local/testing):  './sunhydrogen_model.json'
+//    AWS S3 or CDN:                'https://your-bucket.s3.amazonaws.com/sunhydrogen_model.json'
+//    GitHub raw:                   'https://raw.githubusercontent.com/you/repo/main/sunhydrogen_model.json'
+// ═══════════════════════════════════════════════════════════════════
+const JSON_URL = './sunhydrogen_model.json';
+
+// ── Grid nodes (must match the JSON exactly) ──
+const AREA_NODES  = [25, 100, 250, 500];           // acres
+const WATER_NODES = [1, 5];                         // $/m³
+const ELEC_NODES  = [0.02, 0.03, 0.06, 0.10, 0.20]; // $/kWh
+
+// ── Region metadata (labels + solar irradiance for display only) ──
+const REGIONS = {
+  california: { label: 'California',              solar: 6.64 },
+  texas:      { label: 'Texas',                   solar: 5.20 },
+  germany:    { label: 'Germany',                 solar: 3.20 },
+  japan:      { label: 'Japan',                   solar: 4.20 },
+  oman:       { label: 'Oman',                    solar: 5.80 },
+  ksa:        { label: 'Kingdom of Saudi Arabia', solar: 6.00 },
+};
+
+// ── Reactor metadata (labels + STH for display only) ──
+const REACTORS = {
+  lowcost:  { label: 'Low Cost',            sth:  9.0 },
+  highperf: { label: 'High Performance',    sth: 11.2 },
+  nextgen:  { label: 'Next Generation R&D', sth: 16.0 },
+};
+
+const ACRES_TO_M2 = 4047;
+
+// ── App state ──
+let db             = null;   // populated after JSON loads
+let useAcres       = true;
+let currentRegion  = 'california';
+let currentReactor = 'lowcost';
+
+// ═══════════════════════════════════════════════════════════════════
+//  INTERPOLATION ENGINE
+//  findBracket: finds the two grid nodes that surround a given value
+//  interpolate1D: blends two result objects by a 0-1 weight
+//  lookup: does a full 3-axis interpolation (area, water, electricity)
+// ═══════════════════════════════════════════════════════════════════
+
+// Find the two nodes in a sorted array that bracket a value,
+// and return how far (0-1) the value sits between them.
+function findBracket(nodes, value) {
+  // Clamp to grid edges (handles extrapolation beyond grid min/max)
+  if (value <= nodes[0])  return { lo: nodes[0], hi: nodes[0], t: 0 };
+  if (value >= nodes[nodes.length - 1]) {
+    const n = nodes.length;
+    return { lo: nodes[n-2], hi: nodes[n-1], t: 1 };
+  }
+  for (let i = 0; i < nodes.length - 1; i++) {
+    if (value >= nodes[i] && value <= nodes[i+1]) {
+      const t = (value - nodes[i]) / (nodes[i+1] - nodes[i]);
+      return { lo: nodes[i], hi: nodes[i+1], t };
+    }
+  }
+}
+
+// Blend two result objects linearly: result = (1-t)*a + t*b
+function interpolate1D(a, b, t) {
+  if (!a || !b) return a || b;
+  const blend = obj => {
+    const out = {};
+    for (const k in obj) out[k] = (1 - t) * obj[k] + t * b[k === 'sh' ? k : k];
+    return out;
+  };
+  // Blend sh and elec sub-objects field by field
+  const blendObj = (objA, objB) => {
+    const out = {};
+    for (const k in objA) out[k] = (1 - t) * objA[k] + t * objB[k];
+    return out;
+  };
+  return {
+    sh:   blendObj(a.sh,   b.sh),
+    elec: blendObj(a.elec, b.elec),
+  };
+}
+
+// Look up (and interpolate) the database for a given set of inputs.
+// Performs 3 sequential 1D linear interpolations: area → water → electricity.
+function lookup(acres, water, elec, region, reactor) {
+  if (!db) return null;
+
+  const aB = findBracket(AREA_NODES,  acres);
+  const wB = findBracket(WATER_NODES, water);
+  const eB = findBracket(ELEC_NODES,  elec);
+
+  // Helper: fetch one exact record from the database
+  const get = (a, w, e) => db[`${a}|${w}|${e}|${region}|${reactor}`] || null;
+
+  // Step 1 — interpolate over electricity at each corner of the area/water square
+  const e_ll = interpolate1D(get(aB.lo, wB.lo, eB.lo), get(aB.lo, wB.lo, eB.hi), eB.t);
+  const e_lh = interpolate1D(get(aB.lo, wB.hi, eB.lo), get(aB.lo, wB.hi, eB.hi), eB.t);
+  const e_hl = interpolate1D(get(aB.hi, wB.lo, eB.lo), get(aB.hi, wB.lo, eB.hi), eB.t);
+  const e_hh = interpolate1D(get(aB.hi, wB.hi, eB.lo), get(aB.hi, wB.hi, eB.hi), eB.t);
+
+  // Step 2 — interpolate over water
+  const w_l = interpolate1D(e_ll, e_lh, wB.t);
+  const w_h = interpolate1D(e_hl, e_hh, wB.t);
+
+  // Step 3 — interpolate over area
+  return interpolate1D(w_l, w_h, aB.t);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  DISPLAY HELPERS
+// ═══════════════════════════════════════════════════════════════════
+function fmtNum(n) {
+  if (n >= 1e6)  return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return Math.round(n).toLocaleString();
+}
+function flashEl(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+
+// ── Chart setup ──
+Chart.defaults.color = '#8fa3bc';
+Chart.defaults.font.family = 'Inter';
+
+const costChart = new Chart(
+  document.getElementById('chart-cost').getContext('2d'),
+  {
+    type: 'bar',
+    data: {
+      labels: ['SunHydrogen', 'Green Electrolysis\n(PEM)'],
+      datasets: [
+        { label: 'CapEx',       data: [0,0], backgroundColor: 'rgba(245,197,24,0.88)', borderWidth: 0, borderRadius: { topLeft:0, topRight:0, bottomLeft:2, bottomRight:2 }, borderSkipped: false },
+        { label: 'O&M',         data: [0,0], backgroundColor: 'rgba(245,197,24,0.42)', borderWidth: 0 },
+        { label: 'Water',       data: [0,0], backgroundColor: 'rgba(26,212,200,0.80)',  borderWidth: 0 },
+        { label: 'Electricity', data: [0,0], backgroundColor: 'rgba(96,165,250,0.80)',  borderWidth: 0 },
+        { label: 'Other Fixed', data: [0,0], backgroundColor: 'rgba(107,124,147,0.60)', borderWidth: 0 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 12 }, color: '#8fa3bc' } },
+        y: {
+          stacked: true,
+          grid: { color: 'rgba(30,45,66,0.9)' },
+          ticks: { callback: v => '$' + v.toFixed(1), font: { size: 11 }, color: '#8fa3bc' },
+          title: { display: true, text: '$/kg H₂', font: { size: 11 }, color: '#8fa3bc' },
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14, font: { size: 11 }, color: '#8fa3bc' } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw === 0 ? null : ` ${ctx.dataset.label}: $${Number(ctx.raw).toFixed(3)}/kg`,
+            footer: items => `Total: $${items.reduce((s,i) => s + i.raw, 0).toFixed(2)}/kg`,
+          }
+        },
+      },
+      animation: { duration: 380, easing: 'easeOutQuart' }
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════════
+//  MAIN UPDATE — reads sliders/buttons, calls lookup(), renders
+// ═══════════════════════════════════════════════════════════════════
+function update() {
+  if (!db) return; // wait until JSON has loaded
+
+  const slVal = +document.getElementById('sl-area').value;
+  const water = +document.getElementById('sl-water').value;
+  const elec  = +document.getElementById('sl-elec').value;
+
+  // ── Area display ──
+  let acres, areaDisplay, areaSub;
+  if (useAcres) {
+    acres        = slVal;
+    areaDisplay  = slVal.toLocaleString() + ' acres';
+    areaSub      = '≈ ' + Math.round(acres * ACRES_TO_M2 / 1000).toLocaleString() + ',000 m²';
+  } else {
+    const areaM2 = slVal * 10000;
+    acres        = areaM2 / ACRES_TO_M2;
+    areaDisplay  = areaM2.toLocaleString() + ' m²';
+    areaSub      = '≈ ' + Math.round(acres) + ' acres';
+  }
+
+  document.getElementById('val-area').textContent  = areaDisplay;
+  document.getElementById('area-sub').textContent  = areaSub;
+  document.getElementById('val-water').textContent = '$' + water.toFixed(2) + ' /m³';
+  document.getElementById('val-elec').textContent  = '$' + elec.toFixed(2) + ' /kWh';
+
+  // ── Database lookup with interpolation ──
+  const result = lookup(acres, water, elec, currentRegion, currentReactor);
+  if (!result) return;
+
+  const r = result.sh;    // SunHydrogen outputs
+  const e = result.elec;  // Electrolysis outputs
+
+  // ── Region / reactor display metadata ──
+  const reg = REGIONS[currentRegion];
+  const rx  = REACTORS[currentReactor];
+
+  // ── KPI tiles ──
+  document.getElementById('kpi-daily').innerHTML   = fmtNum(r.kgPerDay) + '<span class="kpi-unit">kg/d</span>';
+  document.getElementById('kpi-annual').textContent = r.tPerYear.toFixed(1) + ' tonnes / year';
+  document.getElementById('kpi-cost').innerHTML    = '$' + r.lcoh.toFixed(2) + '<span class="kpi-unit">/kg</span>';
+  document.getElementById('kpi-co2').innerHTML     = fmtNum(r.co2Avoided) + '<span class="kpi-unit">t/yr</span>';
+  document.getElementById('kpi-sth').innerHTML     = rx.sth.toFixed(1) + '<span class="kpi-unit">%</span>';
+  document.getElementById('kpi-reactor-lbl').textContent = rx.label;
+  document.getElementById('kpi-solar').innerHTML   = reg.solar.toFixed(2) + '<span class="kpi-unit">kWh/m²/d</span>';
+  document.getElementById('kpi-region-lbl').textContent  = reg.label;
+
+  ['kpi-daily','kpi-cost','kpi-co2'].forEach(flashEl);
+
+  // ── Chart ──
+  costChart.data.datasets[0].data = [r.capexComp, e.capexComp];  // CapEx
+  costChart.data.datasets[1].data = [r.omComp,    e.omComp];     // O&M
+  costChart.data.datasets[2].data = [r.waterComp, 0];            // Water (SH only)
+  costChart.data.datasets[3].data = [0,           e.elecComp];   // Electricity (electrolysis only)
+  costChart.data.datasets[4].data = [0,           e.otherComp];  // Other fixed (electrolysis only)
+  costChart.update();
+}
+
+// ── Loading state helpers ──
+function showLoading() {
+  ['kpi-daily','kpi-cost','kpi-co2','kpi-sth','kpi-solar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<span style="color:var(--muted);font-size:14px">Loading…</span>';
+  });
+}
+function showError(msg) {
+  ['kpi-daily','kpi-cost','kpi-co2','kpi-sth','kpi-solar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<span style="color:#e05c3a;font-size:11px">Error</span>';
+  });
+  console.error('SunHydrogen model:', msg);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  BOOTSTRAP — fetch JSON, then wire up all controls
+// ═══════════════════════════════════════════════════════════════════
+showLoading();
+
+fetch(JSON_URL)
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${JSON_URL}`);
+    return res.json();
+  })
+  .then(data => {
+    db = data;
+    update(); // render immediately with default inputs
+  })
+  .catch(err => showError(err.message));
+
+// ── Area unit toggle ──
+document.getElementById('btn-acres').addEventListener('click', () => {
+  if (useAcres) return;
+  useAcres = true;
+  document.getElementById('btn-acres').classList.add('active');
+  document.getElementById('btn-m2').classList.remove('active');
+  const sl = document.getElementById('sl-area');
+  const acres = Math.min(500, Math.max(25, Math.round((+sl.value * 10000) / ACRES_TO_M2 / 25) * 25));
+  sl.min = 25; sl.max = 500; sl.step = 5; sl.value = acres;
+  update();
+});
+document.getElementById('btn-m2').addEventListener('click', () => {
+  if (!useAcres) return;
+  useAcres = false;
+  document.getElementById('btn-m2').classList.add('active');
+  document.getElementById('btn-acres').classList.remove('active');
+  const sl = document.getElementById('sl-area');
+  const steps = Math.min(202, Math.max(10, Math.round((+sl.value * ACRES_TO_M2) / 10000)));
+  sl.min = 10; sl.max = 202; sl.step = 1; sl.value = steps;
+  update();
+});
+
+// ── Region buttons ──
+document.getElementById('region-group').addEventListener('click', e => {
+  const btn = e.target.closest('[data-region]');
+  if (!btn) return;
+  document.querySelectorAll('[data-region]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentRegion = btn.dataset.region;
+  update();
+});
+
+// ── Reactor buttons ──
+document.getElementById('reactor-group').addEventListener('click', e => {
+  const btn = e.target.closest('[data-reactor]');
+  if (!btn) return;
+  document.querySelectorAll('[data-reactor]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentReactor = btn.dataset.reactor;
+  update();
+});
+
+// ── Sliders ──
+document.getElementById('sl-area').addEventListener('input', update);
+document.getElementById('sl-water').addEventListener('input', update);
+document.getElementById('sl-elec').addEventListener('input', update);
+</script>
+</div><!-- /page-wrap -->
+</body>
+</html>
